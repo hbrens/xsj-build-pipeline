@@ -1,0 +1,104 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>Build a HarmonyOS project zip with mounted command-line tools.</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>14</daysToKeep>
+        <numToKeep>30</numToKeep>
+        <artifactDaysToKeep>14</artifactDaysToKeep>
+        <artifactNumToKeep>30</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>ZIP_PATH</name>
+          <description>Absolute path inside the Jenkins container, for example /data/uploads/MultiFinancialManagement-master.zip</description>
+          <defaultValue>/data/uploads/MultiFinancialManagement-master.zip</defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>JOB_ID</name>
+          <description>Optional output directory name under /data/jobs. Defaults to jenkins-${BUILD_NUMBER}.</description>
+          <defaultValue></defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>BUILD_TIMEOUT_SECONDS</name>
+          <description>Build timeout passed to the HarmonyOS build script.</description>
+          <defaultValue>1200</defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command><![CDATA[#!/usr/bin/env bash
+set -u
+
+: "${ZIP_PATH:?ZIP_PATH is required}"
+
+TOOLS_DIR="${TOOLS_DIR:-/opt/harmony/command-line-tools}"
+JOBS_DIR="${JOBS_DIR:-/data/jobs}"
+export BUILD_TIMEOUT_SECONDS="${BUILD_TIMEOUT_SECONDS:-1200}"
+
+if [ ! -f "$ZIP_PATH" ]; then
+  echo "ERROR: ZIP_PATH not found: $ZIP_PATH"
+  exit 2
+fi
+
+job_name="${JOB_ID:-jenkins-${BUILD_NUMBER}}"
+job_name="$(printf '%s' "$job_name" | tr -c 'A-Za-z0-9_.-' '_')"
+JOB_DIR="$JOBS_DIR/$job_name"
+
+echo "zip_path: $ZIP_PATH"
+echo "job_dir: $JOB_DIR"
+echo "tools_dir: $TOOLS_DIR"
+echo "timeout_seconds: $BUILD_TIMEOUT_SECONDS"
+
+build_rc=0
+/opt/harmony-build/scripts/build_harmony_zip.sh "$ZIP_PATH" "$JOB_DIR" "$TOOLS_DIR" || build_rc=$?
+
+rm -rf artifacts logs status.json
+mkdir -p artifacts logs
+
+if [ -d "$JOB_DIR/artifacts" ]; then
+  find "$JOB_DIR/artifacts" -maxdepth 1 -type f -exec cp -f {} artifacts/ \;
+fi
+if [ -f "$JOB_DIR/logs/build.log" ]; then
+  cp -f "$JOB_DIR/logs/build.log" logs/build.log
+fi
+if [ -f "$JOB_DIR/status.json" ]; then
+  cp -f "$JOB_DIR/status.json" status.json
+fi
+
+echo "workspace_artifacts: $WORKSPACE/artifacts"
+echo "persistent_job_dir: $JOB_DIR"
+exit "$build_rc"
+]]></command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>artifacts/**/*,logs/build.log,status.json</artifacts>
+      <allowEmptyArchive>true</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+      <followSymlinks>false</followSymlinks>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers/>
+</project>

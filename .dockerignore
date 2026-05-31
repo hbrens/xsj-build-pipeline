@@ -1,6 +1,7 @@
 .build-verify
 .hvigor
-command-line-tools
-jenkins-data
-jobs
+/command-line-tools
+/jenkins-data
+/jobs
+/uploads
 *.zip

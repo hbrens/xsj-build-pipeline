@@ -1,18 +1,21 @@
 services:
-  harmony-builder:
+  jenkins:
     build:
       context: .
-      dockerfile: service/Dockerfile
+      dockerfile: jenkins/Dockerfile
     ports:
       - "8080:8080"
     environment:
+      JENKINS_ADMIN_ID: admin
+      JENKINS_ADMIN_PASSWORD: admin
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+      JENKINS_OPTS: "--httpPort=8080"
       JOBS_DIR: /data/jobs
-      BUILD_SCRIPT: /app/scripts/build_harmony_zip.sh
       TOOLS_DIR: /opt/harmony/command-line-tools
-      MAX_UPLOAD_MB: "500"
-      MAX_CONCURRENT_BUILDS: "1"
       BUILD_TIMEOUT_SECONDS: "1200"
     volumes:
+      - ./jenkins-data:/var/jenkins_home
       - ./command-line-tools:/opt/harmony/command-line-tools:ro
       - ./jobs:/data/jobs
+      - ./uploads:/data/uploads:ro
     restart: unless-stopped

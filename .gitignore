@@ -1,10 +1,12 @@
 .build-verify/
 .hvigor/
-jobs/
-jenkins-data/
+/jobs/
+/jenkins-data/
+/uploads/*
+!uploads/.gitkeep
 
 # Keep the local HarmonyOS tools directory as a placeholder only.
-command-line-tools/*
+/command-line-tools/*
 !command-line-tools/.gitkeep
 
 # Uploaded/test project archives.
