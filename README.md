@@ -8,6 +8,7 @@ It uses the official Jenkins Docker image, preloads one Jenkins Freestyle job, a
 
 - Build a HarmonyOS project zip from command line.
 - Run the same zip build through Jenkins.
+- Upload a project zip over HTTP and trigger the Jenkins build without Jenkins plugins.
 - Save build logs, status, and generated `.app`, `.hap`, `.har`, or `.hsp` artifacts.
 - Persist Jenkins data under `jenkins-data/`.
 - Persist build outputs under `jobs/`.
@@ -39,6 +40,12 @@ Jenkins URL:
 
 ```text
 http://127.0.0.1:8080
+```
+
+Upload API URL:
+
+```text
+http://127.0.0.1:8090
 ```
 
 Default local login:
@@ -104,6 +111,49 @@ jobs/<job_id>/
   status.json
 ```
 
+## Upload And Trigger Over HTTP
+
+The `upload-api` service accepts a raw zip request body, writes it to `uploads/`
+with a unique filename, then triggers Jenkins through `buildWithParameters`.
+It does not require Jenkins plugins.
+
+```bash
+curl -X POST "http://127.0.0.1:8090/upload?filename=MultiFinancialManagement-master.zip" \
+  -H "Content-Type: application/zip" \
+  --data-binary @MultiFinancialManagement-master.zip
+```
+
+Optional query parameters:
+
+```text
+job_id    output directory name under /data/jobs; defaults to a unique id
+timeout   build timeout in seconds; defaults to BUILD_TIMEOUT_SECONDS
+```
+
+Example with a fixed job id:
+
+```bash
+curl -X POST "http://127.0.0.1:8090/upload?filename=app.zip&job_id=api-test" \
+  -H "Content-Type: application/zip" \
+  --data-binary @app.zip
+```
+
+The response includes the unique uploaded filename, the Jenkins-visible `zip_path`,
+the `job_id`, and the Jenkins queue URL.
+
+To require a token on uploads, set `UPLOAD_TOKEN` for the `upload-api` service and
+send it as either:
+
+```bash
+Authorization: Bearer <token>
+```
+
+or:
+
+```bash
+X-Upload-Token: <token>
+```
+
 ## Local Script Usage
 
 You can still run the build script directly:
@@ -145,6 +195,14 @@ JENKINS_ADMIN_PASSWORD    default: admin
 JOBS_DIR                  default: /data/jobs
 TOOLS_DIR                 default: /opt/harmony/command-line-tools
 BUILD_TIMEOUT_SECONDS     default: 1200
+UPLOADS_DIR               upload-api path for saved zips; default: /data/uploads
+JENKINS_UPLOADS_DIR       Jenkins-visible upload path; default: /data/uploads
+JENKINS_URL               upload-api Jenkins endpoint; default: http://jenkins:8080
+JENKINS_JOB               upload-api Jenkins job name; default: harmony-zip-build
+JENKINS_USER              upload-api Jenkins username; default: admin
+JENKINS_PASSWORD          upload-api Jenkins password; default: admin
+MAX_UPLOAD_BYTES          upload-api max request size; default: 1073741824
+UPLOAD_TOKEN              optional token required by upload-api
 ```
 
 ## Current Limitation

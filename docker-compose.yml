@@ -19,3 +19,25 @@ services:
       - ./jobs:/data/jobs
       - ./uploads:/data/uploads:ro
     restart: unless-stopped
+
+  upload-api:
+    build:
+      context: .
+      dockerfile: service/Dockerfile
+    ports:
+      - "127.0.0.1:8090:8090"
+    environment:
+      PORT: 8090
+      UPLOADS_DIR: /data/uploads
+      JENKINS_UPLOADS_DIR: /data/uploads
+      JENKINS_URL: http://jenkins:8080
+      JENKINS_JOB: harmony-zip-build
+      JENKINS_USER: admin
+      JENKINS_PASSWORD: admin
+      BUILD_TIMEOUT_SECONDS: "1200"
+      MAX_UPLOAD_BYTES: "1073741824"
+    volumes:
+      - ./uploads:/data/uploads
+    depends_on:
+      - jenkins
+    restart: unless-stopped
