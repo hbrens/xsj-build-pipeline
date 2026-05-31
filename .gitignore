@@ -1,0 +1,22 @@
+.build-verify/
+.hvigor/
+jobs/
+jenkins-data/
+
+# Keep the local HarmonyOS tools directory as a placeholder only.
+command-line-tools/*
+!command-line-tools/.gitkeep
+
+# Uploaded/test project archives.
+*.zip
+
+# Python/runtime caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environment/editor files.
+.env
+.DS_Store
+.idea/
+.vscode/

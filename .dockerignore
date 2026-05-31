@@ -1,0 +1,6 @@
+.build-verify
+.hvigor
+command-line-tools
+jenkins-data
+jobs
+*.zip
