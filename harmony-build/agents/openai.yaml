@@ -1,4 +1,0 @@
-interface:
-  display_name: "Harmony Build"
-  short_description: "Package and build HarmonyOS projects via the remote build service"
-  default_prompt: "Build the current HarmonyOS project by packaging it and sending to the build service"
